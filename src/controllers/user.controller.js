@@ -674,7 +674,6 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new DatabaseError("User not found");
   }
 
-  // FIX: Correct file access pattern
   const coverImageUrl = await handleFileUpload(
     req.files,
     "coverImage",
