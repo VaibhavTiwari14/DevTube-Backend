@@ -2,13 +2,11 @@ import morgan from "morgan";
 import fs from "node:fs";
 import path from "node:path";
 
-// Create logs directory if it doesn't exist
 const logsDir = path.join(process.cwd(), "logs");
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
 
-// Separate streams for access and error logs
 const accessLogStream = fs.createWriteStream(path.join(logsDir, "access.log"), {
   flags: "a",
 });
@@ -17,7 +15,6 @@ const errorLogStream = fs.createWriteStream(path.join(logsDir, "error.log"), {
   flags: "a",
 });
 
-// Add timestamp token
 morgan.token("timestamp", () => new Date().toISOString());
 
 morgan.token("res-body", (req, res) => {
@@ -97,7 +94,6 @@ const format = [
 
 morgan.token("req-body", (req) => JSON.stringify(req.body));
 
-// Skip successful health check logs to reduce noise
 const skipHealthCheck = (req, res) => {
   return req.url.includes("/healthCheck") && res.statusCode === 200;
 };
@@ -107,10 +103,8 @@ export const requestLogger = morgan(format, {
   skip: skipHealthCheck,
 });
 
-// Development logger with console colors
 export const requestLoggerDev = morgan(format, {
   skip: skipHealthCheck,
-  // Add colors in development
   stream: {
     write: (message) => {
       const hasError =
@@ -125,7 +119,6 @@ export const requestLoggerDev = morgan(format, {
   },
 });
 
-// Error logger that only logs errors
 export const errorLogger = morgan(format, {
   skip: (req, res) => res.statusCode < 400,
   stream: errorLogStream,
