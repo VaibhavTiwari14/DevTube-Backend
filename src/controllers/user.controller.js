@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { DEFAULT_AVATAR_URL, DEFAULT_COVER_URL } from "../constants.js";
 import { User } from "../models/user.models.js";
-import {
+import ApiError, {
   AuthenticationError,
   DatabaseError,
   ValidationError,
@@ -724,11 +724,146 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   );
 });
 
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim() || typeof username !== "string") {
+    throw new ValidationError("Username is required to fetch channel profile");
+  }
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username.trim().toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: {
+              $in: [req.user?._id, "$subscribers.subscriber"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        fullname: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscriberCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        email: 1,
+      },
+    },
+  ]);
+
+  if (!channel || channel.length === 0) {
+    return ApiError.notFound(`Channel with username ${username} not found`);
+  }
+
+  console.info("Channel profile fetched successfully:", {
+    username: channel[0].username,
+    userId: channel[0]._id,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+    timestamp: new Date().toISOString(),
+  });
+
+  return ApiResponse.sendResponse(
+    res,
+    ApiResponse.ok(channel[0], "Channel profile fetched successfully")
+  );
+});
+
+const getUserWatchHistory = asyncHandler(async (req, res) => {
+  const user = User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user?._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullname: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  if (!user || user.length === 0) {
+    return ApiError.notFound("User not found or has no watch history");
+  }
+
+  return ApiResponse.sendResponse(
+    res,
+    ApiResponse.ok(user[0]?.watchHistory, "Watch history fetched successfully")
+  );
+});
+
 export {
   changePassword,
   cleanupUploadedFiles,
   generateAccessAndRefreshToken,
   getCurrentUser,
+  getUserChannelProfile,
+  getUserWatchHistory,
   handleFileUpload,
   loginUser,
   logoutUser,
