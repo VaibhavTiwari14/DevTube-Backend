@@ -41,7 +41,7 @@ const userSchema = z.object({
 
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters") // FIX: Changed from 4 to 8
+    .min(8, "Password must be at least 8 characters") 
     .max(128, "Password must be less than 128 characters")
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
