@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTweet,
   deleteTweet,
+  getAllTweets,
   getUserTweets,
   updateTweet,
 } from "../controllers/tweet.controller.js";
