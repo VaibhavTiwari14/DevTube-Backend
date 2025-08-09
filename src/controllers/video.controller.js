@@ -22,6 +22,107 @@ const uploadFunction = async (file) => {
   };
 };
 
+export const getAllVideos = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 10), 50);
+  const query = req.query.query?.trim() || "";
+  const allowedSortFields = [
+    "createdAt",
+    "views",
+    "title",
+    "duration",
+    "updatedAt",
+  ];
+  const sortBy = allowedSortFields.includes(req.query.sortBy)
+    ? req.query.sortBy
+    : "createdAt";
+  const sortType = req.query.sortType === "asc" ? 1 : -1;
+  const userId = req.query.userId?.trim();
+
+  if (userId && !isValidObjectId(userId)) {
+    throw ApiError.badRequest("Invalid user ID provided");
+  }
+
+  if (query && query.length > 100) {
+    throw ApiError.badRequest("Search query too long (max 100 characters)");
+  }
+
+  const matchQuery = { isPublished: true };
+  if (query) {
+    matchQuery.$or = [
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ];
+  }
+  if (userId) {
+    matchQuery.owner = new mongoose.Types.ObjectId(userId);
+  }
+
+  const videosAggregate = Video.aggregate([
+    { $match: matchQuery },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+        pipeline: [
+          { $project: { _id: 1, fullName: 1, avatar: 1, username: 1 } },
+        ],
+      },
+    },
+    { $unwind: { path: "$ownerDetails", preserveNullAndEmptyArrays: false } },
+    {
+      $project: {
+        videoFile: 1,
+        thumbnail: 1,
+        title: 1,
+        description: 1,
+        views: 1,
+        duration: 1,
+        isPublished: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        owner: "$ownerDetails",
+      },
+    },
+    { $sort: { [sortBy]: sortType } },
+  ]);
+
+  const options = {
+    page,
+    limit,
+    customLabels: {
+      totalDocs: "totalVideos",
+      docs: "videos",
+      limit: "limit",
+      page: "currentPage",
+      nextPage: "nextPage",
+      prevPage: "prevPage",
+      totalPages: "totalPages",
+      pagingCounter: "serialNo",
+      meta: "pagination",
+    },
+  };
+
+  const result = await Video.aggregatePaginate(videosAggregate, options);
+  return ApiResponse.sendResponse(
+    res,
+    ApiResponse.ok(result, "Videos fetched successfully")
+  );
+});
+
+export const getAllPublishedVideos = asyncHandler(async (req, res) => {
+  const videos = await Video.find({ isPublished: true })
+    .populate("owner", "_id name")
+    .sort({ createdAt: -1 });
+
+  return ApiResponse.sendResponse(
+    res,
+    ApiResponse.ok(videos, "Videos fetched successfully")
+  );
+});
+
 export const publishVideo = asyncHandler(async (req, res) => {
   const { title, description, tags, duration } = req.body;
   const userId = req.user?._id;
@@ -65,17 +166,6 @@ export const publishVideo = asyncHandler(async (req, res) => {
       },
       "Video published successfully"
     )
-  );
-});
-
-export const getAllPublishedVideos = asyncHandler(async (req, res) => {
-  const videos = await Video.find({ isPublished: true })
-    .populate("owner", "_id name")
-    .sort({ createdAt: -1 });
-
-  return ApiResponse.sendResponse(
-    res,
-    ApiResponse.ok(videos, "Videos fetched successfully")
   );
 });
 

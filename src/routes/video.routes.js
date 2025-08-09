@@ -1,31 +1,34 @@
 import { Router } from "express";
 import {
-  publishVideo,
-  getAllVideos,
-  getVideoById,
-  updateVideo,
   deleteVideo,
+  getVideoById,
+  getAllVideos,
+  publishVideo,
   togglePublishStatus,
+  updateVideo,
+  getAllPublishedVideos,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import errorHandler from "../middlewares/errors.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { checkVideoOwnership } from "../middlewares/videoOwnership.middleware.js";
 import {
   validateVideo,
-  validateVideoId
+  validateVideoId,
 } from "../middlewares/validation.middleware.js";
-import errorHandler from "../middlewares/errors.middleware.js";
+import { checkVideoOwnership } from "../middlewares/videoOwnership.middleware.js";
 
 const router = Router();
 
-// Public Routes
-router.route("/").get(getAllVideos);
-router.route("/:videoId").get(validateVideoId, getVideoById);
+// Public routes
+router.get("/published", getAllPublishedVideos);
+router.get("/:id", getVideoById);
 
-// Authenticated Routes
+// Authenticated routes
 router.use(verifyJWT);
 
-// Publish video
+//for authenticated users only
+router.get("/", getAllVideos);
+
 router.post(
   "/",
   upload.fields([
@@ -33,30 +36,26 @@ router.post(
     { name: "thumbnail", maxCount: 1 },
   ]),
   validateVideo,
-  publishVideo // Rename from publishAVideo for cleaner naming
+  publishVideo
 );
 
-// Update video
 router.patch(
-  "/:videoId",
+  "/update/:id",
   validateVideoId,
   checkVideoOwnership,
   upload.single("thumbnail"),
   updateVideo
 );
 
-// Delete video
-router.delete("/:videoId", validateVideoId, checkVideoOwnership, deleteVideo);
+router.delete("/delete/:id", validateVideoId, checkVideoOwnership, deleteVideo);
 
-// Toggle publish status
 router.patch(
-  "/toggle/publish/:videoId",
+  "/toggle/publish/:id",
   validateVideoId,
   checkVideoOwnership,
   togglePublishStatus
 );
 
-// Global error handler
 router.use(errorHandler);
 
 export default router;
