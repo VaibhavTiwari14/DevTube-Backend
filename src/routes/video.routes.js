@@ -9,7 +9,6 @@ import {
   getAllPublishedVideos,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import errorHandler from "../middlewares/errors.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import {
   validateVideo,
@@ -17,19 +16,19 @@ import {
 } from "../middlewares/validation.middleware.js";
 import { checkVideoOwnership } from "../middlewares/videoOwnership.middleware.js";
 
-const router = Router();
+const videoRouter = Router();
 
 // Public routes
-router.get("/published", getAllPublishedVideos);
-router.get("/:id", getVideoById);
+videoRouter.get("/published", getAllPublishedVideos);
+videoRouter.get("/:id", getVideoById);
 
 // Authenticated routes
-router.use(verifyJWT);
+videoRouter.use(verifyJWT);
 
 //for authenticated users only
-router.get("/", getAllVideos);
+videoRouter.get("/", getAllVideos);
 
-router.post(
+videoRouter.post(
   "/",
   upload.fields([
     { name: "videoFile", maxCount: 1 },
@@ -39,7 +38,7 @@ router.post(
   publishVideo
 );
 
-router.patch(
+videoRouter.patch(
   "/update/:id",
   validateVideoId,
   checkVideoOwnership,
@@ -47,15 +46,13 @@ router.patch(
   updateVideo
 );
 
-router.delete("/delete/:id", validateVideoId, checkVideoOwnership, deleteVideo);
+videoRouter.delete("/delete/:id", validateVideoId, checkVideoOwnership, deleteVideo);
 
-router.patch(
+videoRouter.patch(
   "/toggle/publish/:id",
   validateVideoId,
   checkVideoOwnership,
   togglePublishStatus
 );
 
-router.use(errorHandler);
-
-export default router;
+export default videoRouter;

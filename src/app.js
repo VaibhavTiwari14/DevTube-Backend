@@ -9,7 +9,9 @@ import {
   requestLoggerDev,
 } from "./middlewares/logger.middleware.js";
 import healthCheckRouter from "./routes/healthCheck.routes.js";
+import tweetRouter from "./routes/tweet.routes.js";
 import userRouter from "./routes/user.routes.js";
+import videoRouter from "./routes/video.routes.js";
 
 const app = express();
 
@@ -51,6 +53,8 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/v1/healthCheck", healthCheckRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/videos", videoRouter);
+app.use("/api/v1/tweets", tweetRouter);
 
 app.use((req, res) => {
   if (req.originalUrl.startsWith("/api/")) {
