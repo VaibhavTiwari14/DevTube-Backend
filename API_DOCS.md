@@ -831,10 +831,317 @@ GET /api/v1/likes/videos
 }
 ```
 
+# Comment API Documentation
+
+## Add Comment
+
+**Endpoint:**
+
+```
+POST /api/v1/comments
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "content": "...",
+  "videoId": "...",
+  "parentCommentId": "..." // Optional, for replies
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "data": {
+    "_id": "...",
+    "content": "...",
+    "video": "...",
+    "owner": {
+      "_id": "...",
+      "username": "...",
+      "avatar": "..."
+    },
+    "parentComment": "...",
+    "createdAt": "..."
+  }
+}
+```
+
+## Get Video Comments
+
+**Endpoint:**
+
+```
+GET /api/v1/comments/video/:videoId
+```
+
+**Query Parameters:**
+
+- `page` (default: 1)
+- `limit` (default: 10)
+- `sortBy` (newest/oldest/popular)
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "comments": [...],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalComments": 48
+    }
+  }
+}
+```
+
+## Update Comment
+
+**Endpoint:**
+
+```
+PATCH /api/v1/comments/:commentId
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "content": "..."
+}
+```
+
+## Delete Comment
+
+**Endpoint:**
+
+```
+DELETE /api/v1/comments/:commentId
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+# Tweet API Documentation
+
+## Create Tweet
+
+**Endpoint:**
+
+```
+POST /api/v1/tweets
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "content": "..."
+}
+```
+
+## Get User Tweets
+
+**Endpoint:**
+
+```
+GET /api/v1/tweets/user/:userId
+```
+
+**Query Parameters:**
+
+- `page` (default: 1)
+- `limit` (default: 10)
+
+## Update Tweet
+
+**Endpoint:**
+
+```
+PATCH /api/v1/tweets/:tweetId
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "content": "..."
+}
+```
+
+## Delete Tweet
+
+**Endpoint:**
+
+```
+DELETE /api/v1/tweets/:tweetId
+```
+
+# Playlist API Documentation (Additional Endpoints)
+
+## Get User Playlists
+
+**Endpoint:**
+
+```
+GET /api/v1/playlists/user/:userId
+```
+
+## Add Video to Playlist
+
+**Endpoint:**
+
+```
+POST /api/v1/playlists/:playlistId/videos
+```
+
+**Request Body:**
+
+```json
+{
+  "videoId": "..."
+}
+```
+
+## Remove Video from Playlist
+
+**Endpoint:**
+
+```
+DELETE /api/v1/playlists/:playlistId/videos/:videoId
+```
+
+## Delete Playlist
+
+**Endpoint:**
+
+```
+DELETE /api/v1/playlists/:playlistId
+```
+
+# Video API Documentation (Additional Endpoints)
+
+## Update Video
+
+**Endpoint:**
+
+```
+PATCH /api/v1/videos/:videoId
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body (multipart/form-data):**
+| Field | Type | Required | Description |
+|-----------|--------|----------|----------------------------|
+| title | string | No | New video title |
+| description | string | No | New description |
+| thumbnail | file | No | New thumbnail image |
+
+## Delete Video
+
+**Endpoint:**
+
+```
+DELETE /api/v1/videos/:videoId
+```
+
+## Toggle Video Publish Status
+
+**Endpoint:**
+
+```
+PATCH /api/v1/videos/:videoId/toggle-publish
+```
+
+# Dashboard API Documentation (Additional Endpoints)
+
+## Get Video Analytics
+
+**Endpoint:**
+
+```
+GET /api/v1/dashboard/videos/:videoId/analytics
+```
+
+**Query Parameters:**
+
+- `startDate` (ISO date)
+- `endDate` (ISO date)
+- `metric` (views/likes/comments)
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "metrics": {
+      "views": 1000,
+      "likes": 50,
+      "comments": 25
+    },
+    "timeline": [
+      {
+        "date": "2025-08-01",
+        "value": 100
+      }
+    ]
+  }
+}
+```
+
+# Rate Limits
+
+- Authentication routes: 5 attempts per hour
+- API routes: 100 requests per 15 minutes
+- Video uploads: 10 uploads per hour
+
+# Caching
+
+- Video listings: 5 minutes
+- Channel statistics: 5 minutes
+- Public profiles: 30 minutes
+
 # Frontend Notes
 
-- For file uploads, use `multipart/form-data` encoding.
-- All timestamps are ISO8601 strings.
-- All responses include a `success` boolean, `statusCode`, `message`, and `data`.
-- Errors include a list of field-level issues if validation fails.
-- File size limits: Video (100MB), Images (5MB)
+- For file uploads, use `multipart/form-data` encoding
+- All timestamps are ISO8601 strings
+- All responses include a `success` boolean, `statusCode`, `message`, and `data`
+- Errors include a list of field-level issues if validation fails
+- File size limits:
+  - Video: 100MB
+  - Images: 5MB
+  - Request body: 16kb
+- Support for WebP, JPEG, PNG image formats
+- Video formats: MP4, WebM
+- Authentication uses HTTP-only cookies for tokens
+- CORS enabled for localhost:3000 in development
