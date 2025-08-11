@@ -4,7 +4,7 @@ import { Video } from "../models/video.models.js";
 import { Like } from "../models/like.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import { z } from "zod";
 
 // Validation schemas

@@ -493,9 +493,348 @@ All error responses follow this format:
 
 ---
 
-## Notes for Frontend
+# Video API Documentation
+
+## Upload Video
+
+**Endpoint:**
+
+```
+POST /api/v1/videos
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body (multipart/form-data):**
+| Field | Type | Required | Description |
+|-----------|--------|----------|----------------------------|
+| title | string | Yes | Video title |
+| description | string | Yes | Video description |
+| videoFile | file | Yes | Video file (MP4/WebM) |
+| thumbnail | file | Yes | Thumbnail image |
+| duration | number | Yes | Video duration in seconds |
+
+**Response:**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "message": "Video published successfully",
+  "data": {
+    "video": {
+      "_id": "...",
+      "title": "...",
+      "description": "...",
+      "videoFile": "...",
+      "thumbnail": "...",
+      "duration": 120,
+      "views": 0,
+      "owner": "..."
+    }
+  }
+}
+```
+
+## Get All Videos
+
+**Endpoint:**
+
+```
+GET /api/v1/videos
+```
+
+**Query Parameters:**
+
+- `page` (default: 1)
+- `limit` (default: 10, max: 50)
+- `query` (search term)
+- `sortBy` (createdAt/views/title/duration)
+- `sortType` (asc/desc)
+- `userId` (filter by channel)
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "videos": [...],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalVideos": 48
+    }
+  }
+}
+```
+
+## Get Video By ID
+
+**Endpoint:**
+
+```
+GET /api/v1/videos/:id
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "_id": "...",
+    "title": "...",
+    "description": "...",
+    "videoFile": "...",
+    "thumbnail": "...",
+    "duration": 120,
+    "views": 100,
+    "owner": {
+      "_id": "...",
+      "username": "...",
+      "avatar": "..."
+    }
+  }
+}
+```
+
+# Dashboard API Documentation
+
+## Get Channel Stats
+
+**Endpoint:**
+
+```
+GET /api/v1/dashboard/stats
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "videoStats": {
+      "total": 50,
+      "published": 45,
+      "unpublished": 5,
+      "totalViews": 10000,
+      "averageDuration": 300
+    },
+    "subscriberCount": 1000,
+    "totalLikes": 5000,
+    "engagementRate": 4.5
+  }
+}
+```
+
+## Get Channel Videos
+
+**Endpoint:**
+
+```
+GET /api/v1/dashboard/videos
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Query Parameters:**
+
+- `page` (default: 1)
+- `limit` (default: 10)
+- `sortBy` (createdAt/views)
+- `order` (asc/desc)
+- `isPublished` (boolean)
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "videos": [...],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 5,
+      "totalVideos": 50,
+      "hasNextPage": true,
+      "hasPrevPage": false
+    }
+  }
+}
+```
+
+# Subscription API Documentation
+
+## Toggle Subscription
+
+**Endpoint:**
+
+```
+POST /api/v1/subscriptions/toggle/:channelId
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Successfully subscribed/unsubscribed to channel",
+  "data": {
+    "action": "subscribed/unsubscribed"
+  }
+}
+```
+
+## Get Channel Subscribers
+
+**Endpoint:**
+
+```
+GET /api/v1/subscriptions/subscribers/:channelId
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": [
+    {
+      "_id": "...",
+      "subscriber": {
+        "_id": "...",
+        "username": "...",
+        "avatar": "..."
+      }
+    }
+  ]
+}
+```
+
+# Playlist API Documentation
+
+## Create Playlist
+
+**Endpoint:**
+
+```
+POST /api/v1/playlists
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "name": "...",
+  "description": "...",
+  "isPrivate": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 201,
+  "success": true,
+  "data": {
+    "_id": "...",
+    "name": "...",
+    "description": "...",
+    "videos": [],
+    "owner": "..."
+  }
+}
+```
+
+# Like API Documentation
+
+## Toggle Like
+
+**Endpoint:**
+
+```
+POST /api/v1/likes/toggle
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Request Body:**
+
+```json
+{
+  "videoId": "...",
+  "type": "Video/Comment"
+}
+```
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "message": "Like toggled successfully",
+  "data": {
+    "liked": true/false
+  }
+}
+```
+
+## Get Liked Videos
+
+**Endpoint:**
+
+```
+GET /api/v1/likes/videos
+```
+
+**Headers:**
+
+- `Authorization: Bearer <accessToken>`
+
+**Response:**
+
+```json
+{
+  "statusCode": 200,
+  "success": true,
+  "data": {
+    "videos": [...]
+  }
+}
+```
+
+# Frontend Notes
 
 - For file uploads, use `multipart/form-data` encoding.
 - All timestamps are ISO8601 strings.
 - All responses include a `success` boolean, `statusCode`, `message`, and `data`.
 - Errors include a list of field-level issues if validation fails.
+- File size limits: Video (100MB), Images (5MB)

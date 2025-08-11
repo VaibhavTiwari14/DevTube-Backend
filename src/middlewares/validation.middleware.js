@@ -1,5 +1,44 @@
 import { body, param, query, validationResult } from "express-validator";
+import mongoose from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
+
+// MongoDB ObjectId validation
+export const validateObjectId = (paramName) => {
+  return (req, res, next) => {
+    const id = req.params[paramName];
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      throw new ApiError(400, `Invalid ${paramName}`, [
+        {
+          field: paramName,
+          message: `${paramName} must be a valid MongoDB ObjectId`,
+        },
+      ]);
+    }
+    next();
+  };
+};
+
+// Generic validation middleware
+export const validate = (validations) => {
+  return async (req, res, next) => {
+    await Promise.all(validations.map((validation) => validation.run(req)));
+
+    const errors = validationResult(req);
+    if (errors.isEmpty()) {
+      return next();
+    }
+
+    throw ApiError.validation("Validation failed", errors.array());
+  };
+};
+
+// Pagination validation
+export const validatePagination = [
+  query("page").optional().isInt({ min: 1 }).toInt(),
+  query("limit").optional().isInt({ min: 1, max: 50 }).toInt(),
+  query("sortBy").optional().isString(),
+  query("order").optional().isIn(["asc", "desc"]),
+];
 
 export const validateVideo = [
   body("title")
